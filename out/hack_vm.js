@@ -137,6 +137,16 @@
     return vm.push(vm.r[0]);
   };
 
+  vm.commandGoto = function(label) {
+    return vm.currentLine = vm.labels[label];
+  };
+
+  vm.commandIfGoto = function(label) {
+    if (vm.pop() !== 0) {
+      return vm.currentLine = vm.labels[label];
+    }
+  };
+
   vm.hasMoreCode = function() {
     return vm.currentLine < vm.code.length;
   };
@@ -184,6 +194,16 @@
         break;
       case "not":
         vm.commandNot();
+        break;
+      case 'label':
+        0;
+
+        break;
+      case 'goto':
+        vm.commandGoto(tokens[1]);
+        break;
+      case 'if-goto':
+        vm.commandIfGoto(tokens[1]);
         break;
       default:
         throw "unknown command " + token[0];
@@ -256,7 +276,7 @@
     app.dom.code = $('#code');
     app.dom.stack = $('#stack');
     app.dom.ram = $('#ram');
-    app.setCode("push constant 5\npush constant 3\npop static 0\npush constant 1\npush static 0");
+    app.setCode("push constant 1\npush constant 1\nif-goto three\npush constant 2\ngoto add\nlabel three\npush constant 3\nlabel add\nadd");
     return app.reset();
   };
 

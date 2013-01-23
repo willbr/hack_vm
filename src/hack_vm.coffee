@@ -125,6 +125,13 @@ vm.commandNot = ->
     vm.r[0] = ~vm.pop()
     vm.push vm.r[0]
 
+vm.commandGoto = (label) ->
+    vm.currentLine = vm.labels[label]
+
+vm.commandIfGoto = (label) ->
+    if vm.pop() != 0
+        vm.currentLine = vm.labels[label]
+
 vm.hasMoreCode = ->
     vm.currentLine < vm.code.length
 
@@ -158,6 +165,12 @@ vm.evalLine = ->
             vm.commandOr()
         when "not"
             vm.commandNot()
+        when 'label'
+            0
+        when 'goto'
+            vm.commandGoto tokens[1]
+        when 'if-goto'
+            vm.commandIfGoto tokens[1]
         else
             throw "unknown command #{token[0]}"
 
@@ -215,11 +228,15 @@ app.init = ->
     app.dom.ram = $('#ram')
 
     app.setCode """
-    push constant 5
-    push constant 3
-    pop static 0
     push constant 1
-    push static 0
+    push constant 1
+    if-goto three
+    push constant 2
+    goto add
+    label three
+    push constant 3
+    label add
+    add
     """
 
     app.reset()
