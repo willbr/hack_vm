@@ -13,15 +13,20 @@
 # RAM[13-15] General purpose registers
 
 # TODO
-# flow control
-#   function
-#   call
+# change editor to code mirror
+# add drag and drop
+#   vm files
+#   jack files
+# add screen; memory map
+# add keyboard input
+# add tests
 
 window.vm = vm = {}
 window.app = app = {}
 
 vm.init = ->
     vm.symbols =
+        "sp":     0
         "local":     1
         "argument":  2
         "this":      3
@@ -126,6 +131,31 @@ vm.commandIfGoto = (label) ->
     if vm.pop() != 0
         vm.currentLine = vm.labels[label]
 
+vm.commandReturn = ->
+    frame = vm.ram[vm.symbols['local']]
+    returnLine = vm.ram[frame - 5]
+    vm.ram[vm.symbols['argument']] = vm.pop()
+    vm.ram[vm.symbols['sp']]       = vm.ram[vm.symbols['argument']] + 1
+    vm.ram[vm.symbols['that']]     = vm.ram[frame - 1]
+    vm.ram[vm.symbols['this']]     = vm.ram[frame - 2]
+    vm.ram[vm.symbols['argument']] = vm.ram[frame - 3]
+    vm.ram[vm.symbols['local']]    = vm.ram[frame - 4]
+    vm.currentLine = returnLine
+
+vm.commandCall = (functionName, numberOfArguments) ->
+    vm.push(vm.currentLine + 1)
+    vm.push(vm.ram[vm.symbols['local']])
+    vm.push(vm.ram[vm.symbols['argument']])
+    vm.push(vm.ram[vm.symbols['this']])
+    vm.push(vm.ram[vm.symbols['that']])
+    vm.ram[vm.symbols['argument']] = vm.ram[vm.symbols['sp']] - numberOfArguments - 5
+    vm.ram[vm.symbols['local']] = vm.ram[vm.symbols['sp']]
+    vm.commandGoto(functionName)
+
+vm.commandFunction = (functionName, numberOfLocalVariables) ->
+    for i in [0..numberOfLocalVariables]
+        vm.push(0)
+
 vm.hasMoreCode = ->
     vm.currentLine < vm.code.length
 
@@ -165,6 +195,12 @@ vm.evalLine = ->
             vm.commandGoto tokens[1]
         when 'if-goto'
             vm.commandIfGoto tokens[1]
+        when 'call'
+            vm.commandCall tokens[1], tokens[2]
+        when 'function'
+            vm.commandFunction tokens[1], tokens[2]
+        when 'return'
+            vm.commandReturn()
         else
             throw "unknown command #{tokens[0]}"
 
@@ -187,22 +223,25 @@ vm.getStaticVariable = (i) ->
 vm.parseCode = ->
     vm.staticVariables = {}
     currentStaticVariable = 16
+
     createStaticVariable = (i) ->
         alias = "#{vm.currentFile}.#{i}"
         if alias not of vm.staticVariables
             vm.staticVariables[alias] = currentStaticVariable++
         0
 
-    vm.functions = {}
     vm.labels = {}
+
     for line, i in vm.code
         tokens = line.split ' '
         switch tokens[0]
-            when 'label'
-                vm.labels[tokens[1]] = i
             when 'push', 'pop'
                 if tokens[1] == 'static'
                     createStaticVariable(tokens[2])
+            when 'label'
+                vm.labels[tokens[1]] = i
+            when 'function'
+                vm.labels[tokens[1]] = i
             else
                 0
     0
@@ -222,15 +261,18 @@ app.init = ->
     app.dom.ram = $('#ram')
 
     app.setCode """
+    call Sys.init 0
+    function Sys.init 0
     call Main.main 0
     label loop
     goto loop
+    return
     function Main.add 0
     add
     return
     function Main.main 0
-    push 1
-    push 2
+    push constant 1
+    push constant 2
     call Main.add 2
     pop static 0
     return

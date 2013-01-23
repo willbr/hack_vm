@@ -8,6 +8,7 @@
 
   vm.init = function() {
     return vm.symbols = {
+      "sp": 0,
       "local": 1,
       "argument": 2,
       "this": 3,
@@ -147,6 +148,39 @@
     }
   };
 
+  vm.commandReturn = function() {
+    var frame, returnLine;
+    frame = vm.ram[vm.symbols['local']];
+    returnLine = vm.ram[frame - 5];
+    vm.ram[vm.symbols['argument']] = vm.pop();
+    vm.ram[vm.symbols['sp']] = vm.ram[vm.symbols['argument']] + 1;
+    vm.ram[vm.symbols['that']] = vm.ram[frame - 1];
+    vm.ram[vm.symbols['this']] = vm.ram[frame - 2];
+    vm.ram[vm.symbols['argument']] = vm.ram[frame - 3];
+    vm.ram[vm.symbols['local']] = vm.ram[frame - 4];
+    return vm.currentLine = returnLine;
+  };
+
+  vm.commandCall = function(functionName, numberOfArguments) {
+    vm.push(vm.currentLine + 1);
+    vm.push(vm.ram[vm.symbols['local']]);
+    vm.push(vm.ram[vm.symbols['argument']]);
+    vm.push(vm.ram[vm.symbols['this']]);
+    vm.push(vm.ram[vm.symbols['that']]);
+    vm.ram[vm.symbols['argument']] = vm.ram[vm.symbols['sp']] - numberOfArguments - 5;
+    vm.ram[vm.symbols['local']] = vm.ram[vm.symbols['sp']];
+    return vm.commandGoto(functionName);
+  };
+
+  vm.commandFunction = function(functionName, numberOfLocalVariables) {
+    var i, _i, _results;
+    _results = [];
+    for (i = _i = 0; 0 <= numberOfLocalVariables ? _i <= numberOfLocalVariables : _i >= numberOfLocalVariables; i = 0 <= numberOfLocalVariables ? ++_i : --_i) {
+      _results.push(vm.push(0));
+    }
+    return _results;
+  };
+
   vm.hasMoreCode = function() {
     return vm.currentLine < vm.code.length;
   };
@@ -205,6 +239,15 @@
       case 'if-goto':
         vm.commandIfGoto(tokens[1]);
         break;
+      case 'call':
+        vm.commandCall(tokens[1], tokens[2]);
+        break;
+      case 'function':
+        vm.commandFunction(tokens[1], tokens[2]);
+        break;
+      case 'return':
+        vm.commandReturn();
+        break;
       default:
         throw "unknown command " + tokens[0];
     }
@@ -242,21 +285,23 @@
       }
       return 0;
     };
-    vm.functions = {};
     vm.labels = {};
     _ref = vm.code;
     for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
       line = _ref[i];
       tokens = line.split(' ');
       switch (tokens[0]) {
-        case 'label':
-          vm.labels[tokens[1]] = i;
-          break;
         case 'push':
         case 'pop':
           if (tokens[1] === 'static') {
             createStaticVariable(tokens[2]);
           }
+          break;
+        case 'label':
+          vm.labels[tokens[1]] = i;
+          break;
+        case 'function':
+          vm.labels[tokens[1]] = i;
           break;
         default:
           0;
@@ -276,7 +321,7 @@
     app.dom.code = $('#code');
     app.dom.stack = $('#stack');
     app.dom.ram = $('#ram');
-    app.setCode("call Main.main 0\nlabel loop\ngoto loop\nfunction Main.add 0\nadd\nreturn\nfunction Main.main 0\npush 1\npush 2\ncall Main.add 2\npop static 0\nreturn");
+    app.setCode("call Sys.init 0\nfunction Sys.init 0\ncall Main.main 0\nlabel loop\ngoto loop\nreturn\nfunction Main.add 0\nadd\nreturn\nfunction Main.main 0\npush constant 1\npush constant 2\ncall Main.add 2\npop static 0\nreturn");
     return app.reset();
   };
 
