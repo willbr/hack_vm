@@ -217,7 +217,7 @@
     createStaticVariable = function(i) {
       var alias;
       alias = "" + vm.currentFile + "." + i;
-      if (typeof vm.staticVariables[alias] === "undefined") {
+      if (!(alias in vm.staticVariables)) {
         vm.staticVariables[alias] = currentStaticVariable++;
       }
       return 0;
