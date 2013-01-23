@@ -30,8 +30,6 @@
       case 'constant':
         v = index;
         break;
-      case 'argument':
-      case 'local':
       case 'pointer':
       case 'temp':
         offset = vm.symbols[segment] + index;
@@ -39,6 +37,8 @@
         break;
       case 'this':
       case 'that':
+      case 'argument':
+      case 'local':
         offset = vm.ram[vm.symbols[segment]] + index;
         v = vm.ram[offset];
         break;
@@ -55,14 +55,14 @@
   vm.commandPop = function(segment, index) {
     var a, b, offset;
     switch (segment) {
-      case 'argument':
-      case 'local':
       case 'pointer':
       case 'temp':
         offset = vm.symbols[segment] + index;
         break;
       case 'this':
       case 'that':
+      case 'argument':
+      case 'local':
         a = vm.symbols[segment];
         b = vm.ram[a];
         offset = b + index;
@@ -218,7 +218,6 @@
   };
 
   app.init = function() {
-    vm.reset();
     $('#step').click(app.step);
     $('#run').click(app.run);
     $('#stop').click(app.stop);
@@ -227,9 +226,20 @@
     app.dom.code = $('#code');
     app.dom.stack = $('#stack');
     app.dom.ram = $('#ram');
-    app.started = false;
-    app.codeEditable(true);
-    return app.updateDebugGui();
+    app.setCode("push constant 5\npush constant 3\nlt");
+    return app.reset();
+  };
+
+  app.setCode = function(code) {
+    var i, line, _i, _len, _ref;
+    app.dom.code.html('');
+    _ref = code.split('\n');
+    for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+      line = _ref[i];
+      line.replace(/^\s+/, '');
+      app.dom.code.append("<p>" + line + "</p>");
+    }
+    return 0;
   };
 
   app.updateDebugGui = function() {
@@ -279,13 +289,13 @@
     vm.code = [];
     app.code = [];
     app.dom.code.find('p').each(function(index, elem) {
-      var jElem;
-      jElem = $(elem);
-      app.code.push(jElem);
-      return vm.code.push(jElem.text());
+      var $elem;
+      $elem = $(elem);
+      app.code.push($elem);
+      return vm.code.push($elem.text());
     });
     vm.currentLine = 0;
-    vm.currentFile = "boot.vm";
+    vm.currentFile = "_none";
     return vm.parseCode();
   };
 

@@ -22,6 +22,7 @@
 #   call
 #   label
 #   goto
+
 window.vm = vm = {}
 window.app = app = {}
 
@@ -179,7 +180,6 @@ vm.parseCode = ->
     0
 
 app.init = ->
-    vm.reset()
 
     $('#step').click app.step
     $('#run').click app.run
@@ -191,9 +191,20 @@ app.init = ->
     app.dom.stack = $('#stack')
     app.dom.ram = $('#ram')
 
-    app.started = false
-    app.codeEditable true
-    app.updateDebugGui()
+    app.setCode """
+    push constant 5
+    push constant 3
+    lt
+    """
+
+    app.reset()
+
+app.setCode = (code) ->
+    app.dom.code.html('')
+    for line, i in code.split('\n')
+        line.replace /^\s+/, ''
+        app.dom.code.append "<p>#{line}</p>"
+    0
 
 app.updateDebugGui = ->
     app.dom.ram.html("")
@@ -233,11 +244,11 @@ app.getCode = ->
     vm.code = []
     app.code = []
     app.dom.code.find('p').each (index, elem) ->
-        jElem = $(elem)
-        app.code.push jElem
-        vm.code.push jElem.text()
+        $elem = $(elem)
+        app.code.push $elem
+        vm.code.push $elem.text()
     vm.currentLine = 0
-    vm.currentFile = "boot.vm"
+    vm.currentFile = "_none"
     vm.parseCode()
 
 app.run = ->
