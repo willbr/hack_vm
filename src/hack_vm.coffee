@@ -12,6 +12,16 @@
 # RAM[5-12]  TEMP segment
 # RAM[13-15] General purpose registers
 
+# TODO
+# implement static variables
+#   tracking
+#   pushing
+#   poping
+# flow control
+#   function
+#   call
+#   label
+#   goto
 window.vm = vm = {}
 window.app = app = {}
 
@@ -34,10 +44,10 @@ vm.commandPush = (segment, index) ->
     switch segment
         when 'constant'
             v = index
-        when 'argument', 'local', 'pointer', 'temp'
+        when 'pointer', 'temp'
             offset = vm.symbols[segment] + index
             v = vm.ram[offset]
-        when 'this', 'that'
+        when 'this', 'that', 'argument', 'local'
             offset = vm.ram[vm.symbols[segment]] + index
             v = vm.ram[offset]
         when "static"
@@ -49,9 +59,9 @@ vm.commandPush = (segment, index) ->
 
 vm.commandPop = (segment, index) ->
     switch segment
-        when 'argument', 'local', 'pointer', 'temp'
+        when 'pointer', 'temp'
             offset = vm.symbols[segment] + index
-        when 'this', 'that'
+        when 'this', 'that', 'argument', 'local'
             a = vm.symbols[segment]
             b = vm.ram[a]
             offset = b + index
