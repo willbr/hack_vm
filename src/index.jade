@@ -21,6 +21,11 @@ html
             p push constant 1
             p push constant 2
             p add
+            p pop local 0
+            p push constant 10
+            p pop pointer 0
+            p push constant 20
+            p pop this 0
 
         h2 Global Stack
         div#stack
