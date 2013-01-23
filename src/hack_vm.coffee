@@ -182,7 +182,7 @@ vm.parseCode = ->
     currentStaticVariable = 16
     createStaticVariable = (i) ->
         alias = "#{vm.currentFile}.#{i}"
-        if not vm.staticVariables.hasOwnProperty alias
+        if alias not of vm.staticVariables
             vm.staticVariables[alias] = currentStaticVariable++
         0
 
