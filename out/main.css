@@ -1,0 +1,29 @@
+body {
+  font: 16px/1.3 "Lucida Grande", Arial, sans-serif;
+}
+#buttons li {
+  display: inline;
+}
+#code,
+#stack,
+#ram {
+  border: 1px solid #808080;
+  padding: 0.3em;
+  overflow-y: auto;
+  height: 150px;
+}
+#code {
+  height: 200px;
+}
+#code p,
+#stack p,
+#ram p {
+  margin: 0;
+  font-family: monospace;
+}
+.currentLine {
+  background-color: #ffc;
+}
+.lockCode {
+  background-color: #eee;
+}
