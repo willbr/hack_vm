@@ -206,7 +206,7 @@
         vm.commandIfGoto(tokens[1]);
         break;
       default:
-        throw "unknown command " + token[0];
+        throw "unknown command " + tokens[0];
     }
     return vm.currentLine += 1;
   };
@@ -276,7 +276,7 @@
     app.dom.code = $('#code');
     app.dom.stack = $('#stack');
     app.dom.ram = $('#ram');
-    app.setCode("push constant 1\npush constant 1\nif-goto three\npush constant 2\ngoto add\nlabel three\npush constant 3\nlabel add\nadd");
+    app.setCode("call Main.main 0\nlabel loop\ngoto loop\nfunction Main.add 0\nadd\nreturn\nfunction Main.main 0\npush 1\npush 2\ncall Main.add 2\npop static 0\nreturn");
     return app.reset();
   };
 

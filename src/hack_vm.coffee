@@ -13,15 +13,9 @@
 # RAM[13-15] General purpose registers
 
 # TODO
-# implement static variables
-#   tracking
-#   pushing
-#   poping
 # flow control
 #   function
 #   call
-#   label
-#   goto
 
 window.vm = vm = {}
 window.app = app = {}
@@ -172,7 +166,7 @@ vm.evalLine = ->
         when 'if-goto'
             vm.commandIfGoto tokens[1]
         else
-            throw "unknown command #{token[0]}"
+            throw "unknown command #{tokens[0]}"
 
     vm.currentLine += 1
 
@@ -228,15 +222,18 @@ app.init = ->
     app.dom.ram = $('#ram')
 
     app.setCode """
-    push constant 1
-    push constant 1
-    if-goto three
-    push constant 2
-    goto add
-    label three
-    push constant 3
-    label add
+    call Main.main 0
+    label loop
+    goto loop
+    function Main.add 0
     add
+    return
+    function Main.main 0
+    push 1
+    push 2
+    call Main.add 2
+    pop static 0
+    return
     """
 
     app.reset()
