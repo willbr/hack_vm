@@ -6,13 +6,15 @@
 
   window.app = app = {};
 
-  vm.symbols = {
-    "local": 1,
-    "argument": 2,
-    "this": 3,
-    "that": 4,
-    "temp": 5,
-    "pointer": 3
+  vm.init = function() {
+    return vm.symbols = {
+      "local": 1,
+      "argument": 2,
+      "this": 3,
+      "that": 4,
+      "temp": 5,
+      "pointer": 3
+    };
   };
 
   vm.push = function(n) {
@@ -43,8 +45,8 @@
         v = vm.ram[offset];
         break;
       case "static":
-        0;
-
+        offset = vm.getStaticVariable(index);
+        v = vm.ram[offset];
         break;
       default:
         throw 'segment not implemented';
@@ -68,8 +70,7 @@
         offset = b + index;
         break;
       case "static":
-        0;
-
+        offset = vm.getStaticVariable(index);
         break;
       default:
         throw 'segment not implemented';
@@ -203,21 +204,50 @@
     return vm.r = Int16Array(ArrayBuffer(4));
   };
 
+  vm.getStaticVariable = function(i) {
+    var alias;
+    alias = "" + vm.currentFile + "." + i;
+    return vm.staticVariables[alias];
+  };
+
   vm.parseCode = function() {
-    var i, line, tokens, _i, _len, _ref;
+    var createStaticVariable, currentStaticVariable, i, line, tokens, _i, _len, _ref;
+    vm.staticVariables = {};
+    currentStaticVariable = 16;
+    createStaticVariable = function(i) {
+      var alias;
+      alias = "" + vm.currentFile + "." + i;
+      if (typeof vm.staticVariables[alias] === "undefined") {
+        vm.staticVariables[alias] = currentStaticVariable++;
+      }
+      return 0;
+    };
+    vm.functions = {};
     vm.labels = {};
     _ref = vm.code;
     for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
       line = _ref[i];
       tokens = line.split(' ');
-      if (tokens[0] === "label") {
-        vm.labels[tokens[1]] = i;
+      switch (tokens[0]) {
+        case 'label':
+          vm.labels[tokens[1]] = i;
+          break;
+        case 'push':
+        case 'pop':
+          if (tokens[1] === 'static') {
+            createStaticVariable(tokens[2]);
+          }
+          break;
+        default:
+          0;
+
       }
     }
     return 0;
   };
 
   app.init = function() {
+    vm.init();
     $('#step').click(app.step);
     $('#run').click(app.run);
     $('#stop').click(app.stop);
@@ -226,7 +256,7 @@
     app.dom.code = $('#code');
     app.dom.stack = $('#stack');
     app.dom.ram = $('#ram');
-    app.setCode("push constant 5\npush constant 3\nlt");
+    app.setCode("push constant 5\npush constant 3\npop static 0\npush constant 1\npush static 0");
     return app.reset();
   };
 

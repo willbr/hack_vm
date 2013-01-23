@@ -26,13 +26,14 @@
 window.vm = vm = {}
 window.app = app = {}
 
-vm.symbols =
-    "local":     1
-    "argument":  2
-    "this":      3
-    "that":      4
-    "temp":      5
-    "pointer":   3
+vm.init = ->
+    vm.symbols =
+        "local":     1
+        "argument":  2
+        "this":      3
+        "that":      4
+        "temp":      5
+        "pointer":   3
 
 vm.push = (n) ->
     vm.ram[vm.ram[0]] = n
@@ -52,7 +53,8 @@ vm.commandPush = (segment, index) ->
             offset = vm.ram[vm.symbols[segment]] + index
             v = vm.ram[offset]
         when "static"
-            0
+            offset = vm.getStaticVariable(index)
+            v = vm.ram[offset]
         else
             throw 'segment not implemented'
 
@@ -67,7 +69,7 @@ vm.commandPop = (segment, index) ->
             b = vm.ram[a]
             offset = b + index
         when "static"
-            0
+            offset = vm.getStaticVariable(index)
         else
             throw 'segment not implemented'
 
@@ -171,15 +173,36 @@ vm.reset = ->
     vm.ram[0] = 256
     vm.r = Int16Array ArrayBuffer(4)
 
+vm.getStaticVariable = (i) ->
+    alias = "#{vm.currentFile}.#{i}"
+    vm.staticVariables[alias]
+    
 vm.parseCode = ->
+    vm.staticVariables = {}
+    currentStaticVariable = 16
+    createStaticVariable = (i) ->
+        alias = "#{vm.currentFile}.#{i}"
+        if typeof vm.staticVariables[alias] == "undefined"
+            vm.staticVariables[alias] = currentStaticVariable++
+        0
+
+    vm.functions = {}
     vm.labels = {}
     for line, i in vm.code
         tokens = line.split ' '
-        if tokens[0] == "label"
-            vm.labels[tokens[1]] = i
+        switch tokens[0]
+            when 'label'
+                vm.labels[tokens[1]] = i
+            when 'push', 'pop'
+                if tokens[1] == 'static'
+                    createStaticVariable(tokens[2])
+            else
+                0
     0
 
+
 app.init = ->
+    vm.init()
 
     $('#step').click app.step
     $('#run').click app.run
@@ -194,7 +217,9 @@ app.init = ->
     app.setCode """
     push constant 5
     push constant 3
-    lt
+    pop static 0
+    push constant 1
+    push static 0
     """
 
     app.reset()
